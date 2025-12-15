@@ -1,118 +1,74 @@
-name: CI Test
-
-on: [push, pull_request]
-
-jobs:
-  test-pipeline:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Build Docker Image
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: false
-        tags: SRApid:test
-        load: true
-
-    - name: Create Test Input
-      run: |
-        echo "GSE76511" > test_gse.txt
-        mkdir output
-
-    - name: Run Pipeline (Test Mode)
-      # We skip --sra_db and --geo_db to force online mode / skip GEO part
-      # We use --test_limit 20 to use fastq-dump -X 20
-      run: |
-        docker run --rm \
-          -v $(pwd):/data \
-          name: Docker Publish
+name: CI Test Pipeline
 
 on:
   push:
     branches: [ "main", "master" ]
-    # Publish tags as releases.
-    tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ "main", "master" ]
-
-env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ github.repository }}
+  # Allows manual triggering from the Actions tab
+  workflow_dispatch:
 
 jobs:
-  build:
+  test-build-and-run:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      # Login against a Docker registry except on PR
-      # https://github.com/docker/login-action
-      - name: Log into registry ${{ env.REGISTRY }}
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-      # Extract metadata (tags, labels) for Docker
-      # https://github.com/docker/metadata-action
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'format("refs/heads/{0}", "main")' }}
-            type=ref,event=tag
+    - name: Build Docker Image (Local)
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        load: true  # Loads it into local docker daemon instead of pushing
+        tags: srapid:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
-      # Build and push Docker image with Buildx (don't push on PR)
-      # https://github.com/docker/build-push-action
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}:test \
-          --gse_list test_gse.txt \
-          --out_dir ./output \
+    - name: Prepare Test Data
+      run: |
+        echo "GSE76511" > test_gse.txt
+        mkdir -p output
+
+    - name: Run SRApid (Test Mode)
+      # We skip --sra_db and --geo_db to force 'Online Mode' (pysradb)
+      # We use --test_limit 20 to download only 20 reads (fast)
+      run: |
+        docker run --rm \
+          -v $(pwd)/test_gse.txt:/data/list.txt \
+          -v $(pwd)/output:/data/output \
+          srapid:test \
+          --gse_list /data/list.txt \
+          --out_dir /data/output \
           --cpus 2 \
           --test_limit 20
 
-    - name: Verify Outputs
+    - name: Validate Output Structure
       run: |
         echo "Checking outputs..."
         ls -R output/
         
-        # Check if Validation CSV exists
-        if [ -f "output/GSE_run_counts.csv" ]; then
-            echo "Summary CSV found."
-            cat output/GSE_run_counts.csv
-        else
-            echo "Summary CSV missing!"
-            exit 1
+        # 1. Check for Summary CSV
+        if [ ! -f "output/GSE_run_counts.csv" ]; then
+          echo "❌ Failed: GSE_run_counts.csv not generated."
+          exit 1
         fi
-
-        # Check if FASTQ folder exists (We assume GSE76511 has runs)
-        # Note: In test mode we only download the first SRR found
+        
+        # 2. Check for at least one FASTQ file
+        # GSE76511 should have data. We check if the folder exists and has content.
         count=$(find output/fastq -name "*_R1.fastq.gz" | wc -l)
         if [ "$count" -gt 0 ]; then
-            echo "Success: Downloaded $count FASTQ files."
+            echo "✅ Success: $count FASTQ files downloaded."
         else
-            echo "Error: No FASTQ files downloaded."
+            echo "❌ Failed: No FASTQ files found."
             exit 1
+        fi
+        
+        # 3. Check for Technical Metadata
+        if [ ! -f "output/technical_metadata/GSE76511_metadata.csv" ]; then
+             echo "❌ Failed: Technical metadata missing."
+             exit 1
         fi

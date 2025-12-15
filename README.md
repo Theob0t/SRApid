@@ -1,6 +1,13 @@
 # SRApid Pipeline
 
-A Dockerized pipeline to download technical metadata (SRA), biological metadata (GEO), and FASTQ files for a list of GSE IDs.
+[![Docker Publish](https://github.com/Theob0t/SRApid/actions/workflows/publish.yml/badge.svg)](https://github.com/Theob0t/SRApid/actions/workflows/publish.yml)
+[![CI Test Pipeline](https://github.com/Theob0t/SRApid/actions/workflows/ci_test.yml/badge.svg)](https://github.com/Theob0t/SRApid/actions/workflows/ci_test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Container Registry](https://img.shields.io/badge/Container-GHCR-blue?logo=github)](https://github.com/Theob0t/SRApid/pkgs/container/srapid)
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+
+**SRApid** ("SRA-Rapid") is a containerized pipeline designed for HPC environments. It automates the retrieval of paired technical (SRA) and biological (GEO) metadata, alongside raw FASTQ sequencing data, using a highly optimized parallelized approach.
+
 
 ## Requirements
 
