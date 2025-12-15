@@ -1,7 +1,7 @@
 # Dockerfile
 FROM ubuntu:24.04
 
-LABEL maintainer="Theo Botella tbotella@nygenome.org"
+LABEL maintainer="Theo Botella"
 LABEL version="2.0"
 LABEL description="Pipeline for SRA/GEO metadata and FASTQ download"
 
@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y \
 # 2. Install SRA Toolkit (fasterq-dump)
 # Fetching specific version known to be stable or latest
 RUN wget "https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/3.0.10/sratoolkit.3.0.10-ubuntu64.tar.gz" -O /tmp/sratoolkit.tar.gz \
-    && tar -wxvf /tmp/sratoolkit.tar.gz -C /usr/local/ \
+    && tar -xvzf /tmp/sratoolkit.tar.gz -C /usr/local/ \
     && ln -s /usr/local/sratoolkit.3.0.10-ubuntu64/bin/* /usr/local/bin/ \
     && rm /tmp/sratoolkit.tar.gz \
     && fasterq-dump --version

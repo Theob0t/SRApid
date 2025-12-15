@@ -1,11 +1,29 @@
 # SRApid Pipeline
 
+<div align="center">
+
+<pre>
+   _____ _____                  _     _ 
+  / ____|  __ \     /\         (_)   | |
+ | (___ | |__) |   /  \   _ __  _  __| |
+  \___ \|  _  /   / /\ \ | '_ \| |/ _` |
+  ____) | | \ \  / ____ \| |_) | | (_| |
+ |_____/|_|  \_\/_/    \_\ .__/|_|\__,_|
+                         | |            
+                         |_|            
+</pre>
+
+**_Because life is too short to wait for `fastq-dump`._**
+
+<br />
+
 [![Docker Publish](https://github.com/Theob0t/SRApid/actions/workflows/publish.yml/badge.svg)](https://github.com/Theob0t/SRApid/actions/workflows/publish.yml)
 [![CI Test Pipeline](https://github.com/Theob0t/SRApid/actions/workflows/ci_test.yml/badge.svg)](https://github.com/Theob0t/SRApid/actions/workflows/ci_test.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Container Registry](https://img.shields.io/badge/Container-GHCR-blue?logo=github)](https://github.com/Theob0t/SRApid/pkgs/container/srapid)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
+</div>
 **SRApid** ("SRA-Rapid") is a containerized pipeline designed for HPC environments. It automates the retrieval of paired technical (SRA) and biological (GEO) metadata, alongside raw FASTQ sequencing data, using a highly optimized parallelized approach.
 
 
