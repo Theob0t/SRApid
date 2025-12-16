@@ -48,9 +48,8 @@ def extract_gsms_from_metadata(df):
     gsm_pattern = re.compile(r"(GSM\d+)")
     
     # Columns where SRA usually hides the GEO Sample ID
-    cols_to_check = ['experiment_alias', 'sample_alias', 'sample_name', 'alias', 'run_alias', 'sample_attribute']
+    cols_to_check = ['experiment_title', 'experiment_desc']
     found_gsms = set()
-    
     for col in cols_to_check:
         if col in df.columns:
             # Extractall returns a multi-index, we take level 0
