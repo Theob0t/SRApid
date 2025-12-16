@@ -42,40 +42,36 @@ jobs:
       # Create dummy input data
       - name: Prepare Test Data
         run: |
-          echo "GSE76511" > test_gse.txt
+          # Use SRP068300 (which corresponds to GSE76511)
+          echo "SRP068300" > test_srp.txt
           mkdir -p output
 
-      # Run the pipeline in "Test Mode" (Online fallback, limited rows)
       - name: Run SRApid
         run: |
           docker run --rm \
-            -v $(pwd)/test_gse.txt:/data/list.txt \
+            -v $(pwd)/test_srp.txt:/data/list.txt \
             -v $(pwd)/output:/data/output \
             srapid:test \
-            --gse_list /data/list.txt \
+            --srp_list /data/list.txt \
             --out_dir /data/output \
             --cpus 2 \
             --test_limit 20
 
-      # Validate that files were actually created
       - name: Validate Results
         run: |
           echo "--- Output Listing ---"
           ls -R output/
           
-          # Check Summary CSV
-          if [ ! -f "output/GSE_run_counts.csv" ]; then
+          if [ ! -f "output/run_counts.csv" ]; then
             echo "❌ Error: Summary CSV missing."
             exit 1
           fi
 
-          # Check Metadata existence
-          if [ ! -f "output/technical_metadata/GSE76511_metadata.csv" ]; then
+          if [ ! -f "output/technical_metadata/SRP068300_metadata.csv" ]; then
             echo "❌ Error: Technical metadata missing."
             exit 1
           fi
 
-          # Check FASTQ existence
           count=$(find output/fastq -name "*_R1.fastq.gz" | wc -l)
           if [ "$count" -gt 0 ]; then
               echo "✅ Success: $count FASTQ files downloaded."
