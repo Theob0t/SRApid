@@ -51,7 +51,8 @@ If you have a GSE ID (e.g., `GSE76732`), follow these steps:
 ## Requirements
 
 - **Docker** (Local) or **Apptainer/Singularity** (HPC).
-- **SQLite Databases** (Optional but highly recommended for speed).
+- **GEOmetadb SQLite Databases**
+- **SRAmetadb SQLite Databases** (Optional but highly recommended for speed).
 
 ### Downloading Metadata Databases
 
@@ -60,8 +61,8 @@ It avoids internet connection issues and is significantly faster.
 
 | Database | Download Command | Compressed | Unzipped |
 | :--- | :--- | :--- | :--- |
-| **SRAmetadb** | `wget https://gbnci-abcc.ncifcrf.gov/backup/SRAmetadb.sqlite.gz` | ~4 GB | **~40 GB** |
 | **GEOmetadb** | `wget https://gbnci-abcc.ncifcrf.gov/geo/GEOmetadb.sqlite.gz` | ~1 GB | **~15 GB** |
+| **SRAmetadb** | `wget https://gbnci-abcc.ncifcrf.gov/backup/SRAmetadb.sqlite.gz` | ~4 GB | **~40 GB** |
 
 **To unzip:** `gunzip *.sqlite.gz`
 
@@ -99,8 +100,8 @@ SRP068057
 apptainer run --bind /gpfs:/gpfs SRApid.sif \
     --srp_list list.txt \
     --out_dir ./output \
+    --geo_db /gpfs/path/to/GEOmetadb.sqlite \ 
     --sra_db /gpfs/path/to/SRAmetadb.sqlite \ #(Optional)
-    --geo_db /gpfs/path/to/GEOmetadb.sqlite \ #(Optional)
     --cpus 10
 ```
 
@@ -113,6 +114,7 @@ apptainer run --bind /gpfs:/gpfs SRApid.sif \
 apptainer run --bind /gpfs:/gpfs SRApid.sif \
     --srp_list list.txt \
     --out_dir ./output \
+    --geo_db /gpfs/path/to/GEOmetadb.sqlite \ 
     --cpus 10
 ```
 
