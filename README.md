@@ -19,7 +19,6 @@
 
 [![CI/CD Pipeline](https://github.com/Theob0t/SRApid/actions/workflows/pipeline.yml/badge.svg)](https://github.com/Theob0t/SRApid/actions/workflows/pipeline.yml)
 [![Container Registry](https://img.shields.io/badge/Container-GHCR-blue?logo=github)](https://github.com/Theob0t/SRApid/pkgs/container/srapid)
-[![Docker Publish](https://github.com/Theob0t/SRApid/actions/workflows/publish.yml/badge.svg)](https://github.com/Theob0t/SRApid/actions/workflows/publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![R](https://img.shields.io/badge/R-4.0+-blue.svg)](https://www.r-project.org/)
