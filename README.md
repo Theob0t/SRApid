@@ -29,7 +29,7 @@
 
 ---
 
-## ⚠️ Important: Input Format (SRP vs GSE)
+## Input Format (SRP vs GSE)
 
 **SRApid uses SRA Study IDs (e.g., `SRP068300`) as input, not GSE IDs.**
 
@@ -88,8 +88,7 @@ docker pull ghcr.io/theob0t/srapid:latest
 
 Create a text file (e.g., `list.txt`) containing **SRP IDs**, one per line:
 ```text
-SRP068300
-SRP033486
+SRP068057
 ```
 
 ### Option A: High Performance (With Local Databases)
@@ -100,8 +99,8 @@ SRP033486
 apptainer run --bind /gpfs:/gpfs SRApid.sif \
     --srp_list list.txt \
     --out_dir ./output \
-    --sra_db /gpfs/path/to/SRAmetadb.sqlite \
-    --geo_db /gpfs/path/to/GEOmetadb.sqlite \
+    --sra_db /gpfs/path/to/SRAmetadb.sqlite \ #(Optional)
+    --geo_db /gpfs/path/to/GEOmetadb.sqlite \ #(Optional)
     --cpus 10
 ```
 
