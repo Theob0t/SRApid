@@ -29,24 +29,22 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       # Build the image and load it into the local runner for testing
-      # We use GHA cache so the next job is instant
       - name: Build Docker Image (Test)
         uses: docker/build-push-action@v4
         with:
           context: .
-          load: true # Makes image available to 'docker run' immediately
+          load: true 
           tags: srapid:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Create dummy input data
       - name: Prepare Test Data
         run: |
-          # Use SRP068300 (which corresponds to GSE76511)
+          # Use SRP068300 (corresponds to GSE76511)
           echo "SRP068300" > test_srp.txt
           mkdir -p output
 
-      - name: Run SRApid
+      - name: Run SRApid (Test Mode)
         run: |
           docker run --rm \
             -v $(pwd)/test_srp.txt:/data/list.txt \
@@ -67,6 +65,7 @@ jobs:
             exit 1
           fi
 
+          # Check for Metadata (SRP068300)
           if [ ! -f "output/technical_metadata/SRP068300_metadata.csv" ]; then
             echo "❌ Error: Technical metadata missing."
             exit 1
@@ -84,7 +83,6 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
-    # Don't publish on Pull Requests, only on merges/pushes to main
     if: github.event_name != 'pull_request'
     
     permissions:
@@ -107,15 +105,15 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # CHANGE: Removed 'enable=' condition so 'latest' is always generated
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'format("refs/heads/{0}", "main")' }}
+            type=raw,value=latest
             type=ref,event=tag
             type=sha
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Build and Push using the cache from the 'test' job
       - name: Build and Push Docker image
         uses: docker/build-push-action@v4
         with:

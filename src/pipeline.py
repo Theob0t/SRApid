@@ -40,27 +40,25 @@ def download_worker(srr, out_dir, limit_rows=None):
     except Exception as e:
         return f"{srr}: Failed ({str(e)})"
 
-def extract_gse_from_metadata(df):
+def extract_gsms_from_metadata(df):
     """
-    Scans SRA metadata columns for a 'GSE' pattern (e.g., in study_alias).
+    Scans SRA metadata columns for 'GSM' patterns.
+    Returns a list of unique GSM IDs found in this study.
     """
-    gse_pattern = re.compile(r"(GSE\d+)")
+    gsm_pattern = re.compile(r"(GSM\d+)")
     
-    # Check common columns where GSE is hidden
-    cols_to_check = ['study_alias', 'experiment_alias', 'sample_alias', 'study_title']
-    found_gses = set()
+    # Columns where SRA usually hides the GEO Sample ID
+    cols_to_check = ['experiment_alias', 'sample_alias', 'sample_name', 'alias', 'run_alias', 'sample_attribute']
+    found_gsms = set()
     
     for col in cols_to_check:
         if col in df.columns:
-            # Drop NaNs and search strings
-            matches = df[col].dropna().astype(str).str.extract(gse_pattern).dropna()
+            # Extractall returns a multi-index, we take level 0
+            matches = df[col].dropna().astype(str).str.extractall(gsm_pattern)
             if not matches.empty:
-                found_gses.update(matches[0].tolist())
+                found_gsms.update(matches[0].tolist())
     
-    # Return the first one found, or None
-    if found_gses:
-        return list(found_gses)[0]
-    return None
+    return list(found_gsms)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -93,9 +91,9 @@ def main():
         db_online = SRAweb()
 
     srr_download_list = []
-    detected_gse_list = []
+    all_detected_gsms = []
 
-    # --- Step 1: Technical Metadata (SRA) & GSE Discovery ---
+    # --- Step 1: Technical Metadata (SRA) & GSM Discovery ---
     print(f"\n[Step 1] Querying SRA for {len(srp_ids)} studies...")
     
     for srp in tqdm(srp_ids):
@@ -117,31 +115,36 @@ def main():
             if 'run_accession' in df.columns:
                 srr_download_list.extend(df['run_accession'].dropna().tolist())
             
-            # Discover GSE ID
-            found_gse = extract_gse_from_metadata(df)
-            if found_gse:
-                detected_gse_list.append(found_gse)
-                print(f"  {srp} -> Linked to {found_gse}")
+            # Discover GSM IDs
+            gsms = extract_gsms_from_metadata(df)
+            if gsms:
+                all_detected_gsms.extend(gsms)
+                print(f"  {srp} -> Found {len(gsms)} GSMs (e.g., {gsms[0]})")
             else:
-                print(f"  {srp} -> No GSE link found (Biological metadata will be skipped)")
+                print(f"  {srp} -> No GSMs found in metadata (Biological metadata may be missing)")
         else:
             print(f"  WARNING: No data found for {srp}")
 
     # --- Step 2: Biological Metadata (GEO) ---
-    # We create a temporary file with the discovered GSEs to pass to R
-    if detected_gse_list and args.geo_db and os.path.exists(args.geo_db):
-        print(f"\n[Step 2] Extracting Biological Metadata for {len(detected_gse_list)} linked GSEs...")
-        temp_gse_file = os.path.join(args.out_dir, "discovered_GSEs.txt")
-        with open(temp_gse_file, 'w') as f:
-            for g in set(detected_gse_list):
+    # We pass the list of specific GSMs to R
+    unique_gsms = list(set(all_detected_gsms))
+    
+    if unique_gsms and args.geo_db and os.path.exists(args.geo_db):
+        print(f"\n[Step 2] Extracting Biological Metadata for {len(unique_gsms)} GSMs...")
+        temp_gsm_file = os.path.join(args.out_dir, "discovered_GSMs.txt")
+        with open(temp_gsm_file, 'w') as f:
+            for g in unique_gsms:
                 f.write(f"{g}\n")
         
         subprocess.run(["Rscript", "/usr/local/src/gsm2metadata.R", 
-                        "--input", temp_gse_file, 
+                        "--input", temp_gsm_file, 
                         "--output", bio_dir, 
                         "--db", args.geo_db], check=True)
     else:
-        print("\n[Step 2] Skipping GEO (No GSEs linked or DB missing)")
+        if not unique_gsms:
+            print("\n[Step 2] Skipping GEO (No GSMs found in SRA metadata)")
+        else:
+            print("\n[Step 2] Skipping GEO (DB missing)")
 
     # --- Step 3: Download FASTQs ---
     unique_srrs = list(set(srr_download_list))
@@ -161,7 +164,6 @@ def main():
             pass 
 
     # --- Step 4: Validate ---
-    # We pass the original SRP list to validation
     subprocess.run(["python3", "/usr/local/src/validate_run.py", 
                     "--input_list", args.srp_list, 
                     "--base_dir", args.out_dir], check=False)
